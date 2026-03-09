@@ -4,393 +4,315 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Phonetic Alphabet Trainer</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; }
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .container { width: 100%; max-width: 520px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .title { font-size: 20px; font-weight: 700; color: #38bdf8; }
+    .subtitle { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .tabs { display: flex; gap: 8px; }
+    .tab { padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; background: #1e293b; color: #94a3b8; }
+    .tab.active { background: #38bdf8; color: #0f172a; }
+    .progress-bar { background: #1e293b; border-radius: 8px; height: 8px; margin-bottom: 6px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #38bdf8, #22c55e); border-radius: 8px; transition: width 0.5s ease; }
+    .progress-text { display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-bottom: 24px; }
+    .card-box { background: rgba(30,41,59,0.9); border: 1px solid #334155; border-radius: 20px; padding: 48px 32px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4); margin-bottom: 28px; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }
+    .badge-letter { background: #1a2744; color: #a5b4fc; }
+    .badge-number { background: #1e3a5f; color: #7dd3fc; }
+    .symbol { font-size: 96px; font-weight: 800; line-height: 1; margin-bottom: 12px; color: #f8fafc; letter-spacing: -2px; }
+    .word { font-size: 36px; font-weight: 600; color: #38bdf8; letter-spacing: 1px; min-height: 56px; display: flex; align-items: center; justify-content: center; }
+    .hint { font-size: 14px; color: #475569; min-height: 56px; display: flex; align-items: center; justify-content: center; }
+    .btn-reveal { padding: 14px 48px; border-radius: 12px; border: none; cursor: pointer; font-size: 16px; font-weight: 700; background: linear-gradient(135deg, #38bdf8, #818cf8); color: #0f172a; box-shadow: 0 4px 20px rgba(56,189,248,0.3); }
+    .btn-row { display: flex; gap: 12px; justify-content: center; }
+    .btn-answer { padding: 14px 28px; border-radius: 12px; cursor: pointer; font-size: 15px; font-weight: 700; background: transparent; transition: all 0.15s; }
+    .btn-wrong { border: 2px solid #ef4444; color: #ef4444; }
+    .btn-right { border: 2px solid #22c55e; color: #22c55e; }
+    .key-hint { margin-top: 20px; font-size: 12px; color: #334155; text-align: center; }
+    .status-badge { width: 100%; max-width: 520px; margin-bottom: 12px; padding: 8px 16px; border-radius: 10px; text-align: center; font-size: 13px; font-weight: 600; }
+    .status-warn { background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #ef4444; }
+    .status-ok { background: rgba(245,158,11,0.15); border: 1px solid #f59e0b; color: #f59e0b; }
+    .done-box { background: rgba(20,83,45,0.4); border: 1px solid #22c55e; border-radius: 20px; padding: 48px 32px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+    .done-emoji { font-size: 64px; margin-bottom: 16px; }
+    .done-title { font-size: 28px; font-weight: 800; color: #22c55e; margin-bottom: 8px; }
+    .done-text { font-size: 15px; color: #94a3b8; margin-bottom: 32px; }
+    .btn-reset { padding: 14px 40px; border-radius: 12px; border: none; cursor: pointer; font-size: 16px; font-weight: 700; background: linear-gradient(135deg, #38bdf8, #818cf8); color: #0f172a; }
+    .overview-legend { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; font-size: 12px; color: #94a3b8; }
+    .overview-legend span { display: flex; align-items: center; gap: 6px; }
+    .overview-legend .dot { width: 12px; height: 12px; border-radius: 3px; }
+    .overview-grid { background: rgba(30,41,59,0.9); border: 1px solid #334155; border-radius: 16px; padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; }
+    .overview-item { border-radius: 10px; padding: 8px 6px; text-align: center; }
+    .overview-item .sym { font-size: 20px; font-weight: 800; color: #f8fafc; }
+    .overview-item .w { font-size: 9px; color: #94a3b8; margin-top: 2px; }
+    .overview-item .st { font-size: 11px; font-weight: 700; margin-top: 4px; }
+    .hidden { display: none !important; }
+    .fade { transition: opacity 0.25s ease; }
   </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useCallback } = React;
+  <div class="container">
+    <div class="header">
+      <div>
+        <div class="title">Phonetic Alphabet Trainer</div>
+        <div class="subtitle">SRC · GMDSS · PPL exam prep</div>
+      </div>
+      <div class="tabs">
+        <button type="button" class="tab active" data-mode="learn">Learn</button>
+        <button type="button" class="tab" data-mode="overview">Overview</button>
+      </div>
+    </div>
 
-    const ALL_CARDS = [
-      { symbol: "A", word: "Alpha" },
-      { symbol: "B", word: "Bravo" },
-      { symbol: "C", word: "Charlie" },
-      { symbol: "D", word: "Delta" },
-      { symbol: "E", word: "Echo" },
-      { symbol: "F", word: "Foxtrot" },
-      { symbol: "G", word: "Golf" },
-      { symbol: "H", word: "Hotel" },
-      { symbol: "I", word: "India" },
-      { symbol: "J", word: "Juliet" },
-      { symbol: "K", word: "Kilo" },
-      { symbol: "L", word: "Lima" },
-      { symbol: "M", word: "Mike" },
-      { symbol: "N", word: "November" },
-      { symbol: "O", word: "Oscar" },
-      { symbol: "P", word: "Papa" },
-      { symbol: "Q", word: "Quebec" },
-      { symbol: "R", word: "Romeo" },
-      { symbol: "S", word: "Sierra" },
-      { symbol: "T", word: "Tango" },
-      { symbol: "U", word: "Uniform" },
-      { symbol: "V", word: "Victor" },
-      { symbol: "W", word: "Whiskey" },
-      { symbol: "X", word: "X-Ray" },
-      { symbol: "Y", word: "Yankee" },
-      { symbol: "Z", word: "Zulu" },
-      { symbol: "0", word: "Zero" },
-      { symbol: "1", word: "One" },
-      { symbol: "2", word: "Two" },
-      { symbol: "3", word: "Tree" },
-      { symbol: "4", word: "Fower" },
-      { symbol: "5", word: "Five" },
-      { symbol: "6", word: "Six" },
-      { symbol: "7", word: "Seven" },
-      { symbol: "8", word: "Eight" },
-      { symbol: "9", word: "Niner" },
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%;"></div></div>
+    <div class="progress-text">
+      <span id="masteredCount" style="color: #22c55e; font-weight: 600;">0 mastered</span>
+      <span id="remainingCount">36 remaining</span>
+    </div>
+
+    <div id="doneSection" class="done-box hidden">
+      <div class="done-emoji">🎉</div>
+      <div class="done-title">All mastered!</div>
+      <div class="done-text" id="doneText">You answered all 36 letters and numbers correctly.</div>
+      <button type="button" class="btn-reset" id="btnResetAll">Start over</button>
+    </div>
+
+    <div id="learnSection">
+      <div id="statusBadge" class="status-badge hidden"></div>
+      <div id="cardBox" class="card-box fade">
+        <div id="typeBadge" class="badge badge-letter">Letter</div>
+        <div class="symbol" id="cardSymbol">A</div>
+        <div id="wordArea"><div class="hint">Think… then reveal</div></div>
+      </div>
+      <div id="btnArea" style="text-align: center;">
+        <button type="button" class="btn-reveal" id="btnReveal">Reveal</button>
+      </div>
+      <div class="key-hint" id="keyHint">Space = Reveal</div>
+    </div>
+
+    <div id="overviewSection" class="hidden">
+      <div class="overview-legend">
+        <span><span class="dot" style="background:#14532d;border:1px solid #22c55e"></span>Mastered</span>
+        <span><span class="dot" style="background:#0f172a;border:1px solid #334155"></span>Not yet</span>
+        <span><span class="dot" style="background:#450a0a;border:1px solid #ef4444"></span>Wrong – 2 needed</span>
+        <span><span class="dot" style="background:#422006;border:1px solid #f59e0b"></span>One more</span>
+      </div>
+      <div class="overview-grid" id="overviewGrid"></div>
+      <button type="button" class="btn-reset" id="btnResetOverview" style="margin-top:16px;width:100%;padding:12px;border:1px solid #334155;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;background:transparent;color:#64748b;">Start over</button>
+    </div>
+  </div>
+
+  <script>
+    var ALL_CARDS = [
+      { symbol: "A", word: "Alpha" }, { symbol: "B", word: "Bravo" }, { symbol: "C", word: "Charlie" },
+      { symbol: "D", word: "Delta" }, { symbol: "E", word: "Echo" }, { symbol: "F", word: "Foxtrot" },
+      { symbol: "G", word: "Golf" }, { symbol: "H", word: "Hotel" }, { symbol: "I", word: "India" },
+      { symbol: "J", word: "Juliet" }, { symbol: "K", word: "Kilo" }, { symbol: "L", word: "Lima" },
+      { symbol: "M", word: "Mike" }, { symbol: "N", word: "November" }, { symbol: "O", word: "Oscar" },
+      { symbol: "P", word: "Papa" }, { symbol: "Q", word: "Quebec" }, { symbol: "R", word: "Romeo" },
+      { symbol: "S", word: "Sierra" }, { symbol: "T", word: "Tango" }, { symbol: "U", word: "Uniform" },
+      { symbol: "V", word: "Victor" }, { symbol: "W", word: "Whiskey" }, { symbol: "X", word: "X-Ray" },
+      { symbol: "Y", word: "Yankee" }, { symbol: "Z", word: "Zulu" },
+      { symbol: "0", word: "Zero" }, { symbol: "1", word: "One" }, { symbol: "2", word: "Two" },
+      { symbol: "3", word: "Tree" }, { symbol: "4", word: "Fower" }, { symbol: "5", word: "Five" },
+      { symbol: "6", word: "Six" }, { symbol: "7", word: "Seven" }, { symbol: "8", word: "Eight" }, { symbol: "9", word: "Niner" }
     ];
 
     function shuffle(arr) {
-      const a = [...arr];
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
+      var a = arr.slice();
+      for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = a[i]; a[i] = a[j]; a[j] = t;
       }
       return a;
     }
 
+    var state = {
+      queue: shuffle(ALL_CARDS.slice()),
+      qIdx: 0,
+      cardStates: {},
+      masteredSet: new Set(),
+      revealed: false,
+      done: false,
+      mode: "learn"
+    };
+
     function initStates() {
-      const s = {};
-      ALL_CARDS.forEach(c => { s[c.symbol] = { needed: 1, streak: 0 }; });
+      var s = {};
+      ALL_CARDS.forEach(function(c) { s[c.symbol] = { needed: 1, streak: 0 }; });
       return s;
     }
 
-    function App() {
-      // queue: the actual Card objects for the current round (already shuffled)
-      const [queue, setQueue]           = useState(() => shuffle([...ALL_CARDS]));
-      const [qIdx, setQIdx]             = useState(0);
-      const [cardStates, setCardStates] = useState(initStates);
-      const [masteredSet, setMasteredSet] = useState(() => new Set());
-      const [revealed, setRevealed]     = useState(false);
-      const [animating, setAnimating]   = useState(false);
-      const [done, setDone]             = useState(false);
-      const [mode, setMode]             = useState("learn");
+    (function initCardStates() {
+      state.cardStates = initStates();
+    })();
 
-      const total      = ALL_CARDS.length;
-      const masteredN  = masteredSet.size;
-      const current    = queue[qIdx] || null;
-      const currentSt  = current ? cardStates[current.symbol] : null;
-      const isNumber   = current ? /\d/.test(current.symbol) : false;
+    function render() {
+      var total = ALL_CARDS.length;
+      var masteredN = state.masteredSet.size;
+      var current = state.queue[state.qIdx] || null;
+      var currentSt = current ? state.cardStates[current.symbol] : null;
 
-      // ── Core answer handler ──────────────────────────────────────────────
-      // Key fix: setAnimating(true) immediately so the card fades out,
-      // then ALL state updates happen inside setTimeout so there's never
-      // an intermediate render with a different card while still visible.
-      const answer = useCallback((knew) => {
-        if (!current || animating) return;
+      document.getElementById("progressFill").style.width = (masteredN / total) * 100 + "%";
+      document.getElementById("masteredCount").textContent = masteredN + " mastered";
+      document.getElementById("remainingCount").textContent = (total - masteredN) + " remaining";
 
-        setAnimating(true); // fade out NOW, nothing else changes yet
+      if (state.done) {
+        document.getElementById("doneSection").classList.remove("hidden");
+        document.getElementById("learnSection").classList.add("hidden");
+        document.getElementById("overviewSection").classList.add("hidden");
+        document.getElementById("doneText").textContent = "You answered all " + total + " letters and numbers correctly.";
+        return;
+      }
 
-        const sym     = current.symbol;
-        const st      = cardStates[sym];
-        const newStreak  = knew ? st.streak + 1 : 0;
-        const newNeeded  = knew ? st.needed    : 2;
-        const isMastered = knew && newStreak >= st.needed;
+      document.getElementById("doneSection").classList.add("hidden");
 
-        setTimeout(() => {
-          // 1. New card-state map
-          const newStates = {
-            ...cardStates,
-            [sym]: { needed: newNeeded, streak: newStreak },
-          };
+      if (state.mode === "overview") {
+        document.getElementById("learnSection").classList.add("hidden");
+        document.getElementById("overviewSection").classList.remove("hidden");
+        document.querySelectorAll(".tab").forEach(function(t) { t.classList.toggle("active", t.getAttribute("data-mode") === "overview"); });
+        renderOverview();
+        return;
+      }
 
-          // 2. New mastered set
-          const newMastered = isMastered
-            ? new Set([...masteredSet, sym])
-            : masteredSet;
+      document.getElementById("learnSection").classList.remove("hidden");
+      document.getElementById("overviewSection").classList.add("hidden");
+      document.querySelectorAll(".tab").forEach(function(t) { t.classList.toggle("active", t.getAttribute("data-mode") === "learn"); });
 
-          // 3. Done?
-          if (newMastered.size === total) {
-            setCardStates(newStates);
-            setMasteredSet(newMastered);
-            setDone(true);
-            setAnimating(false);
-            return;
-          }
+      if (!current) return;
 
-          // 4. Compute next queue + index
-          //    All inside setTimeout → React 18 batches into one render.
-          let newQueue, newIdx;
+      var statusBadge = document.getElementById("statusBadge");
+      if (currentSt && currentSt.needed === 2) {
+        statusBadge.classList.remove("hidden");
+        statusBadge.className = "status-badge " + (currentSt.streak === 1 ? "status-ok" : "status-warn");
+        statusBadge.textContent = currentSt.streak === 1 ? "⚡ 1 more correct to master" : "⚠ Wrong – 2 correct needed to master";
+      } else {
+        statusBadge.classList.add("hidden");
+      }
 
-          if (isMastered) {
-            // Remove the just-mastered card from the current round queue
-            const filtered = queue.filter(c => c.symbol !== sym);
-            if (qIdx >= filtered.length) {
-              // Ran off the end → start fresh round with all remaining
-              const remaining = ALL_CARDS.filter(c => !newMastered.has(c.symbol));
-              newQueue = shuffle(remaining);
-              newIdx   = 0;
-            } else {
-              // The card at qIdx is now the next one (we spliced out current)
-              newQueue = filtered;
-              newIdx   = qIdx;
-            }
-          } else {
-            // Not mastered: just advance
-            if (qIdx + 1 >= queue.length) {
-              // End of round → reshuffle remaining (mastered set unchanged here)
-              const remaining = ALL_CARDS.filter(c => !masteredSet.has(c.symbol));
-              newQueue = shuffle(remaining);
-              newIdx   = 0;
-            } else {
-              newQueue = queue;
-              newIdx   = qIdx + 1;
-            }
-          }
+      var typeBadge = document.getElementById("typeBadge");
+      typeBadge.textContent = /\d/.test(current.symbol) ? "Number" : "Letter";
+      typeBadge.className = "badge " + (/\d/.test(current.symbol) ? "badge-number" : "badge-letter");
 
-          // 5. Apply everything at once (single render)
-          setCardStates(newStates);
-          setMasteredSet(newMastered);
-          setQueue(newQueue);
-          setQIdx(newIdx);
-          setRevealed(false);
-          setAnimating(false); // fade in with correct new card
-        }, 280);
-      }, [current, animating, cardStates, masteredSet, queue, qIdx, total]);
+      document.getElementById("cardSymbol").textContent = current.symbol;
+      var wordArea = document.getElementById("wordArea");
+      if (state.revealed) {
+        wordArea.innerHTML = "<div class=\"word\">" + current.word + "</div>";
+      } else {
+        wordArea.innerHTML = "<div class=\"hint\">Think… then reveal</div>";
+      }
 
-      // ── Keyboard shortcuts ───────────────────────────────────────────────
-      useEffect(() => {
-        const handler = (e) => {
-          if (mode !== "learn" || done || animating) return;
-          if (e.code === "Space" && !revealed) { e.preventDefault(); setRevealed(true); }
-          if (revealed) {
-            if (e.code === "ArrowRight" || e.code === "KeyJ") answer(true);
-            if (e.code === "ArrowLeft"  || e.code === "KeyF") answer(false);
-          }
-        };
-        window.addEventListener("keydown", handler);
-        return () => window.removeEventListener("keydown", handler);
-      }, [revealed, mode, done, animating, answer]);
+      var btnArea = document.getElementById("btnArea");
+      if (!state.revealed) {
+        btnArea.innerHTML = "<button type=\"button\" class=\"btn-reveal\" id=\"btnReveal\">Reveal</button>";
+        btnArea.querySelector("#btnReveal").onclick = function() { state.revealed = true; render(); };
+      } else {
+        btnArea.innerHTML = "<div class=\"btn-row\"><button type=\"button\" class=\"btn-answer btn-wrong\" id=\"btnWrong\">✗  Didn't know</button><button type=\"button\" class=\"btn-answer btn-right\" id=\"btnRight\">✓  Knew it</button></div>";
+        btnArea.querySelector("#btnWrong").onclick = function() { answer(false); };
+        btnArea.querySelector("#btnRight").onclick = function() { answer(true); };
+      }
 
-      // ── Reset ────────────────────────────────────────────────────────────
-      const reset = () => {
-        const q = shuffle([...ALL_CARDS]);
-        setQueue(q);
-        setQIdx(0);
-        setCardStates(initStates());
-        setMasteredSet(new Set());
-        setRevealed(false);
-        setAnimating(false);
-        setDone(false);
-        setMode("learn");
-      };
+      document.getElementById("keyHint").textContent = state.revealed ? "← Didn't know  ·  → Knew it" : "Space = Reveal";
+    }
 
-      // ── Overview helpers ─────────────────────────────────────────────────
-      const getColor = (sym) => {
-        if (masteredSet.has(sym)) return "#22c55e";
-        const s = cardStates[sym];
+    function answer(knew) {
+      var current = state.queue[state.qIdx];
+      if (!current) return;
+      var sym = current.symbol, st = state.cardStates[sym];
+      var newStreak = knew ? st.streak + 1 : 0, newNeeded = knew ? st.needed : 2;
+      var isMastered = knew && newStreak >= st.needed;
+
+      state.cardStates[sym] = { needed: newNeeded, streak: newStreak };
+      if (isMastered) state.masteredSet.add(sym);
+
+      if (state.masteredSet.size === ALL_CARDS.length) {
+        state.done = true;
+        state.revealed = false;
+        render();
+        return;
+      }
+
+      if (isMastered) {
+        var filtered = state.queue.filter(function(c) { return c.symbol !== sym; });
+        if (state.qIdx >= filtered.length) {
+          var remaining = ALL_CARDS.filter(function(c) { return !state.masteredSet.has(c.symbol); });
+          state.queue = shuffle(remaining);
+          state.qIdx = 0;
+        } else {
+          state.queue = filtered;
+        }
+      } else {
+        if (state.qIdx + 1 >= state.queue.length) {
+          var rem = ALL_CARDS.filter(function(c) { return !state.masteredSet.has(c.symbol); });
+          state.queue = shuffle(rem);
+          state.qIdx = 0;
+        } else {
+          state.qIdx++;
+        }
+      }
+      state.revealed = false;
+      render();
+    }
+
+    function renderOverview() {
+      function getColor(sym) {
+        if (state.masteredSet.has(sym)) return "#22c55e";
+        var s = state.cardStates[sym];
         if (s.needed === 2 && s.streak === 1) return "#f59e0b";
         if (s.needed === 2 && s.streak === 0) return "#ef4444";
         return "#334155";
-      };
-      const getBg = (sym) => {
-        if (masteredSet.has(sym)) return "#14532d";
-        const s = cardStates[sym];
+      }
+      function getBg(sym) {
+        if (state.masteredSet.has(sym)) return "#14532d";
+        var s = state.cardStates[sym];
         if (s.needed === 2 && s.streak === 1) return "#422006";
         if (s.needed === 2 && s.streak === 0) return "#450a0a";
         return "#0f172a";
-      };
-
-      // ── Render ───────────────────────────────────────────────────────────
-      return (
-        <div style={{
-          minHeight: "100vh", display: "flex", flexDirection: "column",
-          alignItems: "center", padding: "24px 16px",
-          fontFamily: "'Segoe UI', system-ui, sans-serif", color: "#f1f5f9",
-        }}>
-
-          {/* Header */}
-          <div style={{ width:"100%", maxWidth:520, display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:28 }}>
-            <div>
-              <div style={{ fontSize:20, fontWeight:700, color:"#38bdf8" }}>Phonetic Alphabet Trainer</div>
-              <div style={{ fontSize:12, color:"#64748b", marginTop:2 }}>SRC · GMDSS · PPL exam prep</div>
-            </div>
-            <div style={{ display:"flex", gap:8 }}>
-              {[["learn","Learn"],["overview","Overview"]].map(([m,label]) => (
-                <button key={m} onClick={() => setMode(m)} style={{
-                  padding:"6px 14px", borderRadius:8, border:"none", cursor:"pointer",
-                  fontWeight:600, fontSize:13,
-                  background: mode===m ? "#38bdf8" : "#1e293b",
-                  color:       mode===m ? "#0f172a" : "#94a3b8",
-                }}>{label}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div style={{ width:"100%", maxWidth:520, background:"#1e293b", borderRadius:8, height:8, marginBottom:6, overflow:"hidden" }}>
-            <div style={{
-              height:"100%", width:`${(masteredN/total)*100}%`,
-              background:"linear-gradient(90deg,#38bdf8,#22c55e)",
-              borderRadius:8, transition:"width 0.5s ease",
-            }}/>
-          </div>
-          <div style={{ width:"100%", maxWidth:520, display:"flex", justifyContent:"space-between", fontSize:12, color:"#64748b", marginBottom:24 }}>
-            <span style={{ color:"#22c55e", fontWeight:600 }}>{masteredN} mastered</span>
-            <span>{total - masteredN} remaining</span>
-          </div>
-
-          {/* ── DONE ── */}
-          {done && (
-            <div style={{
-              width:"100%", maxWidth:520, background:"rgba(20,83,45,0.4)",
-              border:"1px solid #22c55e", borderRadius:20, padding:"48px 32px",
-              textAlign:"center", boxShadow:"0 20px 60px rgba(0,0,0,0.4)",
-            }}>
-              <div style={{ fontSize:64, marginBottom:16 }}>🎉</div>
-              <div style={{ fontSize:28, fontWeight:800, color:"#22c55e", marginBottom:8 }}>All mastered!</div>
-              <div style={{ fontSize:15, color:"#94a3b8", marginBottom:32 }}>
-                You answered all {total} letters and numbers correctly.
-              </div>
-              <button onClick={reset} style={{
-                padding:"14px 40px", borderRadius:12, border:"none", cursor:"pointer",
-                fontSize:16, fontWeight:700,
-                background:"linear-gradient(135deg,#38bdf8,#818cf8)", color:"#0f172a",
-              }}>Start over</button>
-            </div>
-          )}
-
-          {/* ── LEARN ── */}
-          {!done && mode === "learn" && current && (
-            <>
-              {/* Status badge for cards that need 2× */}
-              {currentSt && currentSt.needed === 2 && (
-                <div style={{
-                  width:"100%", maxWidth:520, marginBottom:12,
-                  padding:"8px 16px", borderRadius:10, textAlign:"center",
-                  background: currentSt.streak===1 ? "rgba(245,158,11,0.15)" : "rgba(239,68,68,0.15)",
-                  border: `1px solid ${currentSt.streak===1 ? "#f59e0b" : "#ef4444"}`,
-                  fontSize:13, fontWeight:600,
-                  color: currentSt.streak===1 ? "#f59e0b" : "#ef4444",
-                }}>
-                  {currentSt.streak===1 ? "⚡ 1 more correct to master" : "⚠ Wrong – 2 correct needed to master"}
-                </div>
-              )}
-
-              {/* Card — opacity controlled only by `animating` */}
-              <div style={{
-                width:"100%", maxWidth:520,
-                background:"rgba(30,41,59,0.9)",
-                border:"1px solid #334155",
-                borderRadius:20, padding:"48px 32px",
-                textAlign:"center", boxShadow:"0 20px 60px rgba(0,0,0,0.4)",
-                transition:"opacity 0.25s ease",
-                opacity: animating ? 0 : 1,
-                marginBottom:28,
-              }}>
-                <div style={{
-                  display:"inline-block", padding:"4px 12px", borderRadius:20,
-                  background: isNumber ? "#1e3a5f" : "#1a2744",
-                  color:      isNumber ? "#7dd3fc" : "#a5b4fc",
-                  fontSize:12, fontWeight:600, marginBottom:20, letterSpacing:1, textTransform:"uppercase",
-                }}>
-                  {isNumber ? "Number" : "Letter"}
-                </div>
-                <div style={{ fontSize:96, fontWeight:800, lineHeight:1, marginBottom:12, color:"#f8fafc", letterSpacing:-2 }}>
-                  {current.symbol}
-                </div>
-                <div style={{ minHeight:56, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  {revealed
-                    ? <div style={{ fontSize:36, fontWeight:600, color:"#38bdf8", letterSpacing:1 }}>{current.word}</div>
-                    : <div style={{ fontSize:14, color:"#475569" }}>Think… then reveal</div>
-                </div>
-              </div>
-
-              {/* Buttons */}
-              {!revealed ? (
-                <button onClick={() => setRevealed(true)} style={{
-                  padding:"14px 48px", borderRadius:12, border:"none", cursor:"pointer",
-                  fontSize:16, fontWeight:700,
-                  background:"linear-gradient(135deg,#38bdf8,#818cf8)", color:"#0f172a",
-                  boxShadow:"0 4px 20px rgba(56,189,248,0.3)",
-                }}>Reveal</button>
-              ) : (
-                <div style={{ display:"flex", gap:12 }}>
-                  {[
-                    { label:"✗  Didn't know", knew:false, color:"#ef4444" },
-                    { label:"✓  Knew it",     knew:true,  color:"#22c55e" },
-                  ].map(({ label, knew, color }) => (
-                    <button key={label} onClick={() => answer(knew)} style={{
-                      padding:"14px 28px", borderRadius:12, border:`2px solid ${color}`,
-                      cursor:"pointer", fontSize:15, fontWeight:700,
-                      background:"transparent", color, transition:"all 0.15s",
-                    }}
-                      onMouseEnter={e => { e.currentTarget.style.background=color; e.currentTarget.style.color="#fff"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.color=color; }}
-                    >{label}</button>
-                  ))}
-                </div>
-              )}
-
-              <div style={{ marginTop:20, fontSize:12, color:"#334155", textAlign:"center" }}>
-                {!revealed ? "Space = Reveal" : "← Didn't know  ·  → Knew it"}
-              </div>
-            </>
-          )}
-
-          {/* ── OVERVIEW ── */}
-          {mode === "overview" && (
-            <div style={{ width:"100%", maxWidth:520 }}>
-              <div style={{ display:"flex", gap:12, marginBottom:16, flexWrap:"wrap" }}>
-                {[
-                  { color:"#22c55e", bg:"#14532d", label:"Mastered" },
-                  { color:"#334155", bg:"#0f172a", label:"Not yet" },
-                  { color:"#ef4444", bg:"#450a0a", label:"Wrong – 2 needed" },
-                  { color:"#f59e0b", bg:"#422006", label:"One more" },
-                ].map(({ color, bg, label }) => (
-                  <div key={label} style={{ display:"flex", alignItems:"center", gap:6, fontSize:12, color:"#94a3b8" }}>
-                    <div style={{ width:12, height:12, borderRadius:3, background:bg, border:`1px solid ${color}` }}/>
-                    {label}
-                  </div>
-                ))}
-              </div>
-              <div style={{ background:"rgba(30,41,59,0.9)", border:"1px solid #334155", borderRadius:16, padding:20 }}>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(70px,1fr))", gap:8 }}>
-                  {ALL_CARDS.map(item => {
-                    const color = getColor(item.symbol);
-                    const bg    = getBg(item.symbol);
-                    const s     = cardStates[item.symbol];
-                    const isMast = masteredSet.has(item.symbol);
-                    return (
-                      <div key={item.symbol} style={{ background:bg, border:`1px solid ${color}`, borderRadius:10, padding:"8px 6px", textAlign:"center" }}>
-                        <div style={{ fontSize:20, fontWeight:800, color:"#f8fafc" }}>{item.symbol}</div>
-                        <div style={{ fontSize:9, color:"#94a3b8", marginTop:2 }}>{item.word}</div>
-                        <div style={{ fontSize:11, fontWeight:700, color, marginTop:4 }}>
-                          {isMast ? "✓" : s.needed===2 ? `${s.streak}/${s.needed}` : "–"}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <button onClick={reset} style={{
-                marginTop:16, width:"100%", padding:12, borderRadius:12,
-                border:"1px solid #334155", cursor:"pointer", fontSize:14, fontWeight:600,
-                background:"transparent", color:"#64748b",
-              }}>Start over</button>
-            </div>
-          )}
-        </div>
-      );
+      }
+      var html = "";
+      ALL_CARDS.forEach(function(item) {
+        var color = getColor(item.symbol), bg = getBg(item.symbol), s = state.cardStates[item.symbol], isMast = state.masteredSet.has(item.symbol);
+        var stText = isMast ? "✓" : (s.needed === 2 ? s.streak + "/" + s.needed : "–");
+        html += "<div class=\"overview-item\" style=\"background:" + bg + ";border:1px solid " + color + "\"><div class=\"sym\">" + item.symbol + "</div><div class=\"w\">" + item.word + "</div><div class=\"st\" style=\"color:" + color + "\">" + stText + "</div></div>";
+      });
+      document.getElementById("overviewGrid").innerHTML = html;
     }
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    function reset() {
+      state.queue = shuffle(ALL_CARDS.slice());
+      state.qIdx = 0;
+      state.cardStates = initStates();
+      state.masteredSet = new Set();
+      state.revealed = false;
+      state.done = false;
+      state.mode = "learn";
+      render();
+    }
+
+    document.querySelectorAll(".tab").forEach(function(t) {
+      t.onclick = function() { state.mode = this.getAttribute("data-mode"); render(); };
+    });
+    document.getElementById("btnResetAll").onclick = reset;
+    document.getElementById("btnResetOverview").onclick = reset;
+
+    document.addEventListener("keydown", function(ev) {
+      if (state.mode !== "learn" || state.done) return;
+      if (ev.code === "Space" && !state.revealed) { ev.preventDefault(); state.revealed = true; render(); }
+      if (state.revealed) {
+        if (ev.code === "ArrowRight" || ev.code === "KeyJ") answer(true);
+        if (ev.code === "ArrowLeft" || ev.code === "KeyF") answer(false);
+      }
+    });
+
+    render();
   </script>
 </body>
 </html>

@@ -4,6 +4,12 @@
 
 Flashcard app to learn the NATO/ICAO phonetic alphabet (Alpha, Bravo, Charlie, …) and numbers. For **maritime radio** (SRC, LRC, GMDSS), **aviation** (PPL), and anyone who needs to spell clearly over radio.
 
+## Use in the browser
+
+**[Open the app →](https://lberenbach.github.io/phonetic-alphabet-trainer/)**
+
+No download, no install. Runs in your browser.
+
 ## Features
 
 - **Letters A–Z** and **numbers 0–9** with their phonetic spellings (Alpha, Bravo, Charlie, …)
@@ -12,14 +18,15 @@ Flashcard app to learn the NATO/ICAO phonetic alphabet (Alpha, Bravo, Charlie, �
 - Keyboard shortcuts for fast practice
 - Works offline – single HTML file, no build step or server
 
-## Getting started
+## Run locally (optional)
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/lberenbach/phonetic-alphabet-trainer.git
-   cd phonetic-alphabet-trainer
-   ```
-2. Open `index.html` in your browser. No installation or server required.
+Clone the repo and open `index.html` in your browser:
+
+```bash
+git clone https://github.com/lberenbach/phonetic-alphabet-trainer.git
+cd phonetic-alphabet-trainer
+# then open index.html in your browser
+```
 
 ## Usage
 
