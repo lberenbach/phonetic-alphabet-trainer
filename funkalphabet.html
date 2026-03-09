@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Funkalphabet – SRC Lernkarten</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    const ALL_CARDS = [
+      { symbol: "A", word: "Alpha" },
+      { symbol: "B", word: "Bravo" },
+      { symbol: "C", word: "Charlie" },
+      { symbol: "D", word: "Delta" },
+      { symbol: "E", word: "Echo" },
+      { symbol: "F", word: "Foxtrott" },
+      { symbol: "G", word: "Golf" },
+      { symbol: "H", word: "Hotel" },
+      { symbol: "I", word: "India" },
+      { symbol: "J", word: "Juliet" },
+      { symbol: "K", word: "Kilo" },
+      { symbol: "L", word: "Lima" },
+      { symbol: "M", word: "Mike" },
+      { symbol: "N", word: "November" },
+      { symbol: "O", word: "Oscar" },
+      { symbol: "P", word: "Papa" },
+      { symbol: "Q", word: "Quebec" },
+      { symbol: "R", word: "Romeo" },
+      { symbol: "S", word: "Sierra" },
+      { symbol: "T", word: "Tango" },
+      { symbol: "U", word: "Uniform" },
+      { symbol: "V", word: "Victor" },
+      { symbol: "W", word: "Whiskey" },
+      { symbol: "X", word: "X-Ray" },
+      { symbol: "Y", word: "Yankee" },
+      { symbol: "Z", word: "Zulu" },
+      { symbol: "0", word: "Zero" },
+      { symbol: "1", word: "One" },
+      { symbol: "2", word: "Two" },
+      { symbol: "3", word: "Tree" },
+      { symbol: "4", word: "Fower" },
+      { symbol: "5", word: "Five" },
+      { symbol: "6", word: "Six" },
+      { symbol: "7", word: "Seven" },
+      { symbol: "8", word: "Eight" },
+      { symbol: "9", word: "Niner" },
+    ];
+
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function initStates() {
+      const s = {};
+      ALL_CARDS.forEach(c => { s[c.symbol] = { needed: 1, streak: 0 }; });
+      return s;
+    }
+
+    function App() {
+      // queue: the actual Card objects for the current round (already shuffled)
+      const [queue, setQueue]           = useState(() => shuffle([...ALL_CARDS]));
+      const [qIdx, setQIdx]             = useState(0);
+      const [cardStates, setCardStates] = useState(initStates);
+      const [masteredSet, setMasteredSet] = useState(() => new Set());
+      const [revealed, setRevealed]     = useState(false);
+      const [animating, setAnimating]   = useState(false);
+      const [done, setDone]             = useState(false);
+      const [mode, setMode]             = useState("learn");
+
+      const total      = ALL_CARDS.length;
+      const masteredN  = masteredSet.size;
+      const current    = queue[qIdx] || null;
+      const currentSt  = current ? cardStates[current.symbol] : null;
+      const isNumber   = current ? /\d/.test(current.symbol) : false;
+
+      // ── Core answer handler ──────────────────────────────────────────────
+      // Key fix: setAnimating(true) immediately so the card fades out,
+      // then ALL state updates happen inside setTimeout so there's never
+      // an intermediate render with a different card while still visible.
+      const answer = useCallback((knew) => {
+        if (!current || animating) return;
+
+        setAnimating(true); // fade out NOW, nothing else changes yet
+
+        const sym     = current.symbol;
+        const st      = cardStates[sym];
+        const newStreak  = knew ? st.streak + 1 : 0;
+        const newNeeded  = knew ? st.needed    : 2;
+        const isMastered = knew && newStreak >= st.needed;
+
+        setTimeout(() => {
+          // 1. New card-state map
+          const newStates = {
+            ...cardStates,
+            [sym]: { needed: newNeeded, streak: newStreak },
+          };
+
+          // 2. New mastered set
+          const newMastered = isMastered
+            ? new Set([...masteredSet, sym])
+            : masteredSet;
+
+          // 3. Done?
+          if (newMastered.size === total) {
+            setCardStates(newStates);
+            setMasteredSet(newMastered);
+            setDone(true);
+            setAnimating(false);
+            return;
+          }
+
+          // 4. Compute next queue + index
+          //    All inside setTimeout → React 18 batches into one render.
+          let newQueue, newIdx;
+
+          if (isMastered) {
+            // Remove the just-mastered card from the current round queue
+            const filtered = queue.filter(c => c.symbol !== sym);
+            if (qIdx >= filtered.length) {
+              // Ran off the end → start fresh round with all remaining
+              const remaining = ALL_CARDS.filter(c => !newMastered.has(c.symbol));
+              newQueue = shuffle(remaining);
+              newIdx   = 0;
+            } else {
+              // The card at qIdx is now the next one (we spliced out current)
+              newQueue = filtered;
+              newIdx   = qIdx;
+            }
+          } else {
+            // Not mastered: just advance
+            if (qIdx + 1 >= queue.length) {
+              // End of round → reshuffle remaining (mastered set unchanged here)
+              const remaining = ALL_CARDS.filter(c => !masteredSet.has(c.symbol));
+              newQueue = shuffle(remaining);
+              newIdx   = 0;
+            } else {
+              newQueue = queue;
+              newIdx   = qIdx + 1;
+            }
+          }
+
+          // 5. Apply everything at once (single render)
+          setCardStates(newStates);
+          setMasteredSet(newMastered);
+          setQueue(newQueue);
+          setQIdx(newIdx);
+          setRevealed(false);
+          setAnimating(false); // fade in with correct new card
+        }, 280);
+      }, [current, animating, cardStates, masteredSet, queue, qIdx, total]);
+
+      // ── Keyboard shortcuts ───────────────────────────────────────────────
+      useEffect(() => {
+        const handler = (e) => {
+          if (mode !== "learn" || done || animating) return;
+          if (e.code === "Space" && !revealed) { e.preventDefault(); setRevealed(true); }
+          if (revealed) {
+            if (e.code === "ArrowRight" || e.code === "KeyJ") answer(true);
+            if (e.code === "ArrowLeft"  || e.code === "KeyF") answer(false);
+          }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+      }, [revealed, mode, done, animating, answer]);
+
+      // ── Reset ────────────────────────────────────────────────────────────
+      const reset = () => {
+        const q = shuffle([...ALL_CARDS]);
+        setQueue(q);
+        setQIdx(0);
+        setCardStates(initStates());
+        setMasteredSet(new Set());
+        setRevealed(false);
+        setAnimating(false);
+        setDone(false);
+        setMode("learn");
+      };
+
+      // ── Overview helpers ─────────────────────────────────────────────────
+      const getColor = (sym) => {
+        if (masteredSet.has(sym)) return "#22c55e";
+        const s = cardStates[sym];
+        if (s.needed === 2 && s.streak === 1) return "#f59e0b";
+        if (s.needed === 2 && s.streak === 0) return "#ef4444";
+        return "#334155";
+      };
+      const getBg = (sym) => {
+        if (masteredSet.has(sym)) return "#14532d";
+        const s = cardStates[sym];
+        if (s.needed === 2 && s.streak === 1) return "#422006";
+        if (s.needed === 2 && s.streak === 0) return "#450a0a";
+        return "#0f172a";
+      };
+
+      // ── Render ───────────────────────────────────────────────────────────
+      return (
+        <div style={{
+          minHeight: "100vh", display: "flex", flexDirection: "column",
+          alignItems: "center", padding: "24px 16px",
+          fontFamily: "'Segoe UI', system-ui, sans-serif", color: "#f1f5f9",
+        }}>
+
+          {/* Header */}
+          <div style={{ width:"100%", maxWidth:520, display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:28 }}>
+            <div>
+              <div style={{ fontSize:20, fontWeight:700, color:"#38bdf8" }}>⛵ Funkalphabet</div>
+              <div style={{ fontSize:12, color:"#64748b", marginTop:2 }}>SRC Prüfungsvorbereitung</div>
+            </div>
+            <div style={{ display:"flex", gap:8 }}>
+              {[["learn","Lernen"],["overview","Übersicht"]].map(([m,label]) => (
+                <button key={m} onClick={() => setMode(m)} style={{
+                  padding:"6px 14px", borderRadius:8, border:"none", cursor:"pointer",
+                  fontWeight:600, fontSize:13,
+                  background: mode===m ? "#38bdf8" : "#1e293b",
+                  color:       mode===m ? "#0f172a" : "#94a3b8",
+                }}>{label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div style={{ width:"100%", maxWidth:520, background:"#1e293b", borderRadius:8, height:8, marginBottom:6, overflow:"hidden" }}>
+            <div style={{
+              height:"100%", width:`${(masteredN/total)*100}%`,
+              background:"linear-gradient(90deg,#38bdf8,#22c55e)",
+              borderRadius:8, transition:"width 0.5s ease",
+            }}/>
+          </div>
+          <div style={{ width:"100%", maxWidth:520, display:"flex", justifyContent:"space-between", fontSize:12, color:"#64748b", marginBottom:24 }}>
+            <span style={{ color:"#22c55e", fontWeight:600 }}>{masteredN} gemeistert</span>
+            <span>{total - masteredN} verbleibend</span>
+          </div>
+
+          {/* ── DONE ── */}
+          {done && (
+            <div style={{
+              width:"100%", maxWidth:520, background:"rgba(20,83,45,0.4)",
+              border:"1px solid #22c55e", borderRadius:20, padding:"48px 32px",
+              textAlign:"center", boxShadow:"0 20px 60px rgba(0,0,0,0.4)",
+            }}>
+              <div style={{ fontSize:64, marginBottom:16 }}>🎉</div>
+              <div style={{ fontSize:28, fontWeight:800, color:"#22c55e", marginBottom:8 }}>Alles gemeistert!</div>
+              <div style={{ fontSize:15, color:"#94a3b8", marginBottom:32 }}>
+                Du hast alle {total} Buchstaben und Zahlen richtig beantwortet.
+              </div>
+              <button onClick={reset} style={{
+                padding:"14px 40px", borderRadius:12, border:"none", cursor:"pointer",
+                fontSize:16, fontWeight:700,
+                background:"linear-gradient(135deg,#38bdf8,#818cf8)", color:"#0f172a",
+              }}>Nochmal von vorne</button>
+            </div>
+          )}
+
+          {/* ── LEARN ── */}
+          {!done && mode === "learn" && current && (
+            <>
+              {/* Status badge for cards that need 2× */}
+              {currentSt && currentSt.needed === 2 && (
+                <div style={{
+                  width:"100%", maxWidth:520, marginBottom:12,
+                  padding:"8px 16px", borderRadius:10, textAlign:"center",
+                  background: currentSt.streak===1 ? "rgba(245,158,11,0.15)" : "rgba(239,68,68,0.15)",
+                  border: `1px solid ${currentSt.streak===1 ? "#f59e0b" : "#ef4444"}`,
+                  fontSize:13, fontWeight:600,
+                  color: currentSt.streak===1 ? "#f59e0b" : "#ef4444",
+                }}>
+                  {currentSt.streak===1 ? "⚡ Noch 1× richtig zum Meistern" : "⚠ Falsch beantwortet – 2× richtig zum Meistern"}
+                </div>
+              )}
+
+              {/* Card — opacity controlled only by `animating` */}
+              <div style={{
+                width:"100%", maxWidth:520,
+                background:"rgba(30,41,59,0.9)",
+                border:"1px solid #334155",
+                borderRadius:20, padding:"48px 32px",
+                textAlign:"center", boxShadow:"0 20px 60px rgba(0,0,0,0.4)",
+                transition:"opacity 0.25s ease",
+                opacity: animating ? 0 : 1,
+                marginBottom:28,
+              }}>
+                <div style={{
+                  display:"inline-block", padding:"4px 12px", borderRadius:20,
+                  background: isNumber ? "#1e3a5f" : "#1a2744",
+                  color:      isNumber ? "#7dd3fc" : "#a5b4fc",
+                  fontSize:12, fontWeight:600, marginBottom:20, letterSpacing:1, textTransform:"uppercase",
+                }}>
+                  {isNumber ? "Zahl" : "Buchstabe"}
+                </div>
+                <div style={{ fontSize:96, fontWeight:800, lineHeight:1, marginBottom:12, color:"#f8fafc", letterSpacing:-2 }}>
+                  {current.symbol}
+                </div>
+                <div style={{ minHeight:56, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  {revealed
+                    ? <div style={{ fontSize:36, fontWeight:600, color:"#38bdf8", letterSpacing:1 }}>{current.word}</div>
+                    : <div style={{ fontSize:14, color:"#475569" }}>Denk nach… dann aufdecken</div>
+                  }
+                </div>
+              </div>
+
+              {/* Buttons */}
+              {!revealed ? (
+                <button onClick={() => setRevealed(true)} style={{
+                  padding:"14px 48px", borderRadius:12, border:"none", cursor:"pointer",
+                  fontSize:16, fontWeight:700,
+                  background:"linear-gradient(135deg,#38bdf8,#818cf8)", color:"#0f172a",
+                  boxShadow:"0 4px 20px rgba(56,189,248,0.3)",
+                }}>Aufdecken</button>
+              ) : (
+                <div style={{ display:"flex", gap:12 }}>
+                  {[
+                    { label:"✗  Nicht gewusst", knew:false, color:"#ef4444" },
+                    { label:"✓  Gewusst",        knew:true,  color:"#22c55e" },
+                  ].map(({ label, knew, color }) => (
+                    <button key={label} onClick={() => answer(knew)} style={{
+                      padding:"14px 28px", borderRadius:12, border:`2px solid ${color}`,
+                      cursor:"pointer", fontSize:15, fontWeight:700,
+                      background:"transparent", color, transition:"all 0.15s",
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.background=color; e.currentTarget.style.color="#fff"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.color=color; }}
+                    >{label}</button>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ marginTop:20, fontSize:12, color:"#334155", textAlign:"center" }}>
+                {!revealed ? "Leertaste = Aufdecken" : "← Nicht gewusst  ·  → Gewusst"}
+              </div>
+            </>
+          )}
+
+          {/* ── OVERVIEW ── */}
+          {mode === "overview" && (
+            <div style={{ width:"100%", maxWidth:520 }}>
+              <div style={{ display:"flex", gap:12, marginBottom:16, flexWrap:"wrap" }}>
+                {[
+                  { color:"#22c55e", bg:"#14532d", label:"Gemeistert" },
+                  { color:"#334155", bg:"#0f172a", label:"Noch offen" },
+                  { color:"#ef4444", bg:"#450a0a", label:"Falsch – 2× nötig" },
+                  { color:"#f59e0b", bg:"#422006", label:"Halb – noch 1×" },
+                ].map(({ color, bg, label }) => (
+                  <div key={label} style={{ display:"flex", alignItems:"center", gap:6, fontSize:12, color:"#94a3b8" }}>
+                    <div style={{ width:12, height:12, borderRadius:3, background:bg, border:`1px solid ${color}` }}/>
+                    {label}
+                  </div>
+                ))}
+              </div>
+              <div style={{ background:"rgba(30,41,59,0.9)", border:"1px solid #334155", borderRadius:16, padding:20 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(70px,1fr))", gap:8 }}>
+                  {ALL_CARDS.map(item => {
+                    const color = getColor(item.symbol);
+                    const bg    = getBg(item.symbol);
+                    const s     = cardStates[item.symbol];
+                    const isMast = masteredSet.has(item.symbol);
+                    return (
+                      <div key={item.symbol} style={{ background:bg, border:`1px solid ${color}`, borderRadius:10, padding:"8px 6px", textAlign:"center" }}>
+                        <div style={{ fontSize:20, fontWeight:800, color:"#f8fafc" }}>{item.symbol}</div>
+                        <div style={{ fontSize:9, color:"#94a3b8", marginTop:2 }}>{item.word}</div>
+                        <div style={{ fontSize:11, fontWeight:700, color, marginTop:4 }}>
+                          {isMast ? "✓" : s.needed===2 ? `${s.streak}/${s.needed}` : "–"}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <button onClick={reset} style={{
+                marginTop:16, width:"100%", padding:12, borderRadius:12,
+                border:"1px solid #334155", cursor:"pointer", fontSize:14, fontWeight:600,
+                background:"transparent", color:"#64748b",
+              }}>Neu starten</button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
