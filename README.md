@@ -12,5 +12,23 @@ Flashcard app to learn the NATO/ICAO phonetic alphabet (Alpha, Bravo, Charlie, �
 - Keyboard shortcuts for fast practice
 - Works offline – single HTML file, no build step or server
 
+## Getting started
 
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/lberenbach/-phonetic-alphabet-trainer.git
+   cd -phonetic-alphabet-trainer
+   ```
+2. Open `index.html` in your browser. No installation or server required.
+
+## Usage
+
+- **Reveal:** Click “Reveal” or press **Space**
+- **Didn’t know:** **←** or **F**
+- **Knew it:** **→** or **J**
+- Use the **Overview** tab to see progress for all letters and numbers.
+
+## License
+
+This project is licensed under the MIT License.
 
