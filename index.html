@@ -151,6 +151,32 @@
       return s;
     }
 
+    var audioCtx = null;
+    function getAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      return audioCtx;
+    }
+    function playTone(freq, durationMs, volume) {
+      try {
+        var ctx = getAudio();
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = "sine";
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(volume || 0.15, ctx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durationMs / 1000);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + durationMs / 1000);
+      } catch (e) {}
+    }
+    function playRevealSound() { playTone(440, 80, 0.12); }
+    function playCorrectSound() { playTone(523, 100, 0.15); setTimeout(function() { playTone(659, 100, 0.12); }, 80); }
+    function playWrongSound() { playTone(220, 140, 0.15); }
+
     (function initCardStates() {
       state.cardStates = initStates();
     })();
@@ -213,7 +239,7 @@
       var btnArea = document.getElementById("btnArea");
       if (!state.revealed) {
         btnArea.innerHTML = "<button type=\"button\" class=\"btn-reveal\" id=\"btnReveal\">Reveal</button>";
-        btnArea.querySelector("#btnReveal").onclick = function() { state.revealed = true; render(); };
+        btnArea.querySelector("#btnReveal").onclick = function() { playRevealSound(); state.revealed = true; render(); };
       } else {
         btnArea.innerHTML = "<div class=\"btn-row\"><button type=\"button\" class=\"btn-answer btn-wrong\" id=\"btnWrong\">✗  Didn't know</button><button type=\"button\" class=\"btn-answer btn-right\" id=\"btnRight\">✓  Knew it</button></div>";
         btnArea.querySelector("#btnWrong").onclick = function() { answer(false); };
@@ -226,6 +252,7 @@
     function answer(knew) {
       var current = state.queue[state.qIdx];
       if (!current) return;
+      if (knew) playCorrectSound(); else playWrongSound();
       var sym = current.symbol, st = state.cardStates[sym];
       var newStreak = knew ? st.streak + 1 : 0, newNeeded = knew ? st.needed : 2;
       var isMastered = knew && newStreak >= st.needed;
@@ -305,7 +332,7 @@
 
     document.addEventListener("keydown", function(ev) {
       if (state.mode !== "learn" || state.done) return;
-      if (ev.code === "Space" && !state.revealed) { ev.preventDefault(); state.revealed = true; render(); }
+      if (ev.code === "Space" && !state.revealed) { ev.preventDefault(); playRevealSound(); state.revealed = true; render(); }
       if (state.revealed) {
         if (ev.code === "ArrowRight" || ev.code === "KeyJ") answer(true);
         if (ev.code === "ArrowLeft" || ev.code === "KeyF") answer(false);
