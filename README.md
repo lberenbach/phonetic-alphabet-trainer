@@ -16,8 +16,8 @@ Flashcard app to learn the NATO/ICAO phonetic alphabet (Alpha, Bravo, Charlie, â
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/lberenbach/-phonetic-alphabet-trainer.git
-   cd -phonetic-alphabet-trainer
+   git clone https://github.com/lberenbach/phonetic-alphabet-trainer.git
+   cd phonetic-alphabet-trainer
    ```
 2. Open `index.html` in your browser. No installation or server required.
 
